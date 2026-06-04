@@ -22,7 +22,7 @@ module load cuda
 # python3 -m venv .venv
 source .venv/bin/activate
 
-export HF_TOKEN=""
+export HF_TOKEN="hf_your_token"
 
 pip install 
 # Make log dirs so #SBATCH --output doesn't fail

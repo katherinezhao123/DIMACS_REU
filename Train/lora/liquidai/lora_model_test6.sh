@@ -1,0 +1,49 @@
+#!/bin/bash
+#SBATCH --job-name=lora-finetune-test6
+#SBATCH --partition=gpu-redhat            # Amarel's GPU partition
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8          # CPU cores for data loading
+#SBATCH --gres=gpu:4               # request 1 GPU
+#SBATCH --mem=64G                  # RAM (not VRAM — system memory)
+#SBATCH --time=12:00:00            # 12 hours, adjust based on your estimate
+#SBATCH --output=test6/lora_out.txt   # stdout — %j is the job ID
+#SBATCH --error=test6/lora_err.txt    # stderr separately so errors are easy to find
+
+module load cuda/12.1.0
+source /cache/home/kz498/miniconda3_new/bin/activate
+conda activate lora_train
+export HF_HOME=/cache/home/kz498/.cache/huggingface
+
+
+mkdir -p ./test6/model ./test6/checkpoints
+
+# Monitor GPU memory
+nvidia-smi --query-gpu=timestamp,memory.used,memory.free,utilization.gpu \
+    --format=csv -l 5 > test6/lora_memory.csv &
+NVIDIA_PID=$!
+
+START=$(date +%s)
+python3 /cache/home/kz498/Research/Train/lora/lora_model.py \
+        --r 8 \
+        --lora_alpha 8 \
+        --lr 2e-4 \
+        --num_train_epochs 4 \
+        --per_device 4 \
+        --gradient_accum 4 \
+        --lora_dropout 0.1 \
+        --warmup_ratio 0.06 \
+        --lr_scheduler linear \
+        --output_dir ./test6/checkpoints \
+        --save_dir ./test6/model
+
+END=$(date +%s)
+
+
+kill $NVIDIA_PID
+
+echo "================================"
+echo "Training time: $((END - START)) seconds"
+echo "Peak GPU memory:"
+awk -F',' 'NR>1 {print $2}' test6/lora_memory.csv | sort -n | tail -1
+echo "================================"

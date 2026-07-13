@@ -5,7 +5,8 @@ Dataset trained upon/benchmarked on- GSM8k
 
 ### Benchmark 
 Code for validating fine tuned and not fine tuned model 
-
+export HF_TOKEN="hf_your_token"
+before sbatching!
 
 ### Train
 Code for fine-tuning model 
